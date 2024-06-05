@@ -1,8 +1,18 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <limits>
 
 using namespace std;
+
+void clearScreen() 
+{        // Fungsi untuk membersihkan layar tiap pemanggilan fungsi
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
+}
 
 class goods 
 {
@@ -61,115 +71,238 @@ vector<goods> list_goods;
 void add_goods() 
 {
     string code, name, description;
-    
+    char next;
     int amount;
-    cout << "Masukkan Kode Barang: ";
-    cin >> code;
-    cout << "Masukkan Nama Barang: ";
-    cin.ignore();
-    getline(cin, name);
-    cout << "Masukkan Jumlah Stok: ";
-    cin >> amount;
-    cout << "Masukkan Deskripsi Barang: ";
-    cin.ignore();
-    getline(cin, description);
+    do
+    {
+        clearScreen();
+        bool is_duplicate;
+        // Looping sampai pengguna memasukkan kode barang yang tidak duplikat
+        do
+        {
+            is_duplicate = false;
+            cout << "Masukkan Kode Barang: ";
+            cin >> code;
 
-    goods new_goods(code, name, amount, description);
-    list_goods.push_back(new_goods);
-    cout << "Barang berhasil ditambahkan!" << endl;
+            // Memeriksa apakah kode barang sudah ada
+            for (const auto &goods : list_goods) 
+            {
+                if (goods.get_goods_code() == code) 
+                {
+                    is_duplicate = true;
+                    cout << "Kode barang sudah ada. Silakan masukkan kode barang yang berbeda." << endl;
+                    break;
+                }
+            }
+        } 
+        while (is_duplicate); // ulangi jika duplikat
+
+        cout << "Masukkan Nama Barang: ";
+        cin.ignore();
+        getline(cin, name);
+        
+        while (true) 
+        {
+            cout << "Masukkan Jumlah Stok: ";
+            cin >> amount;
+
+            if (cin.fail()) 
+            {
+                cin.clear(); // Menghapus flag kesalahan
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Mengabaikan input yang salah
+                cout << "Input tidak valid. Silakan masukkan angka." << endl;
+            } 
+            
+            else 
+            {
+                break; // Input valid, keluar dari loop
+            }
+        }
+        cout << "Masukkan Deskripsi Barang: ";
+        cin.ignore();
+        
+        getline(cin, description);
+        goods new_goods(code, name, amount, description);
+        list_goods.push_back(new_goods);
+        cout << "Barang berhasil ditambahkan!" << endl;
+        cout << "\nTekan 1 untuk menambahkan barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Barang: ";
+        cin >> next;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
+    }
+    
+    while (next == '1');
 }
 
 void show_all_goods()
 {
-    if (list_goods .empty()) 
+    char next;
+    do
     {
-        cout << "Tidak ada barang dalam daftar." << endl;
+        if (list_goods .empty()) 
+        {
+            cout << "Tidak ada barang dalam daftar." << endl;
+        } 
+        
+        else 
+        {
+            cout << "Daftar Barang:" << endl;
+            
+            for (const auto &goods : list_goods) 
+            {
+                goods .show_goods();
+            }
+        }
+        cout << "\nKetik bebas untuk balik ke Menu Manajemen Barang.";
+        cin >> next;
+
+        while (getchar() != '\n');
     } 
     
-    else 
-    {
-        cout << "Daftar Barang:" << endl;
-        
-        for (const auto &goods : list_goods) 
-        {
-            goods .show_goods();
-        }
-    }
+    while (next == '1');
 }
 
 void find_goods()
 {
     string code;
-    cout << "Masukkan Kode Barang yang Dicari: ";
-    cin >> code;
+    char next;
 
-    for (const auto &goods : list_goods) 
+    do
     {
-        if (goods .get_goods_code() == code) 
+        clearScreen();
+        cout << "Masukkan Kode Barang yang Dicari: ";
+        cin >> code;
+
+        bool found = false;
+        for (const auto &goods : list_goods) 
         {
-            goods .show_goods();
-            
-            return;
+            if (goods .get_goods_code() == code) 
+            {
+                goods .show_goods();
+                found = true;
+                
+                break;
+            }
         }
+
+        if (!found)
+        {
+            cout << "Barang tidak ditemukan." << endl;    
+        }
+        cout << "\nTekan 1 untuk mencari barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Barang: ";
+        cin >> next;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
     }
-    cout << "Barang tidak ditemukan." << endl;
+
+    while (next == '1');
 }
 
 void change_goods()
 {
     string code;
-    cout << "Masukkan Kode Barang yang Akan Diubah: ";
-    cin >> code;
+    char next;
 
-    for (auto &goods : list_goods) {
-        if (goods.get_goods_code() == code) 
+    do
+    {
+        clearScreen();
+        cout << "Masukkan Kode Barang yang Akan Diubah: ";
+        cin >> code;
+
+        bool found = false;
+        for (auto &goods : list_goods) 
         {
-            string name, description;
-            
-            int amount;
-            cout << "Masukkan Nama Barang Baru: ";
-            cin.ignore();
-            
-            getline(cin, name);
-            cout << "Masukkan Jumlah Stok Baru: ";
-            cin >> amount;
-            cout << "Masukkan Deskripsi Baru: ";
-            cin.ignore();
-            
-            getline(cin, description);
-            goods.set_goods_name(name);
-            goods.set_amount_stock(amount);
-            goods.set_description(description);
+            if (goods.get_goods_code() == code) 
+            {
+                string name, description;
+                
+                int amount;
+                cout << "\nMasukkan Nama Barang Baru: ";
+                cin.ignore();
+                
+                getline(cin, name);
 
-            cout << "Barang berhasil diubah!" << endl;
-            
-            return;
+                while (true)
+                {
+                    cout << "Masukkan Jumlah Stok: ";
+                    cin >> amount;
+
+                    if (cin.fail()) 
+                    {
+                        cin.clear(); // Menghapus flag kesalahan
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Mengabaikan input yang salah
+                        cout << "Input tidak valid. Silakan masukkan angka." << endl;
+                    } 
+                    
+                    else 
+                    {
+                        break; // Input valid, keluar dari loop
+                    }
+                }
+                cout << "Masukkan Deskripsi Baru: ";
+                cin.ignore();
+                
+                getline(cin, description);
+                goods.set_goods_name(name);
+                goods.set_amount_stock(amount);
+                goods.set_description(description);
+
+                cout << "Barang berhasil diubah!" << endl;
+                found = true;
+                
+                break;
+            }
         }
+
+        if (!found)
+        {
+            cout << "Barang tidak ditemukan." << endl;
+        }
+        cout << "\nTekan 1 untuk mengubah barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Barang: ";
+        cin >> next;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
     }
-    cout << "Barang tidak ditemukan." << endl;
+
+    while (next == '1');
 }
 
 void delete_goods()
 {
     string code;
-    cout << "Masukkan Kode Barang yang Akan Dihapus: ";
-    cin >> code;
+    char next;
 
-    for (auto it = list_goods .begin(); it != list_goods .end(); ++it) 
+    do
     {
-        if (it ->get_goods_code() == code) 
+        clearScreen();
+        cout << "Masukkan Kode Barang yang Akan Dihapus: ";
+        cin >> code;
+        
+        bool found = false;
+        for (auto it = list_goods .begin(); it != list_goods .end(); ++it) 
         {
-            list_goods.erase(it);
-            cout << "Barang berhasil dihapus!" << endl;
-            
-            return;
+            if (it ->get_goods_code() == code) 
+            {
+                list_goods.erase(it);
+                cout << "Barang berhasil dihapus!" << endl;
+                found = true;
+
+                break;
+            }
         }
+
+        if (!found)
+        {
+            cout << "Barang tidak ditemukan." << endl;
+        }
+        cout << "\nTekan 1 untuk menghapus barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Barang: ";
+        cin >> next;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
     }
-    cout << "Barang tidak ditemukan." << endl;
+
+    while (next == '1');
 }
 
 void goods_management_menu() 
 {
+    clearScreen();
     int choices;
     do {
         cout << "\n--- Menu Manajemen Barang ---" << endl;
@@ -178,29 +311,34 @@ void goods_management_menu()
         cout << "3. Cari Barang" << endl;
         cout << "4. Ubah Data Barang" << endl;
         cout << "5. Hapus Barang" << endl;
-        cout << "6. Keluar" << endl;
+        cout << "6. Keluar dari Menu utama" << endl;
         cout << "Pilih opsi: ";
         cin >> choices;
 
         switch (choices) 
         {
             case 1:
+                clearScreen();
                 add_goods();
                 break;
             case 2:
+                clearScreen();
                 show_all_goods();
                 break;
             case 3:
+                clearScreen();
                 find_goods();
                 break;
             case 4:
+                clearScreen();
                 change_goods();
                 break;
             case 5:
+                clearScreen();
                 delete_goods();
                 break;
             case 6:
-                cout << "Keluar dari Menu Utama." << endl;
+                clearScreen();
                 break;
             default:
                 cout << "Pilihan tidak valid. Silakan coba lagi." << endl;
@@ -223,7 +361,7 @@ void main_menu()
         cout << "2. Menu Manajemen Pemasukan Barang" << endl;
         cout << "3. Menu Manajemen Pengeluaran Barang" << endl;
         cout << "4. Laporan" << endl;
-        cout << "5. Keluar" << endl;
+        cout << "5. Keluar dari Program" << endl;
         cout << "Pilih opsi: ";
         cin >> choices;
 
@@ -233,16 +371,18 @@ void main_menu()
                 goods_management_menu();
                 break;
             case 2:
-                incoming_goods_management_menu();
+                clearScreen();
+//                incoming_goods_management_menu();
                 break;
             case 3:
-                outgoing_goods_management_menu();
+                clearScreen();
+//                outgoing_goods_management_menu();
                 break;
             case 4:
-                report();
+                clearScreen();
+//                report();
                 break;
             case 5:
-                cout << "Keluar dari program." << endl;
                 break;
             default:
                 cout << "Pilihan tidak valid. Silakan coba lagi." << endl;
