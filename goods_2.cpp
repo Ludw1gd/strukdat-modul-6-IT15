@@ -574,6 +574,7 @@ void outgoing_inventory_management::add_outgoing_goods()
        clearScreen();
        bool is_duplicate;
 
+       // Looping sampai pengguna memasukkan kode barang yang tidak duplikat
        do
        {
            is_duplicate = false;
@@ -615,7 +616,8 @@ void outgoing_inventory_management::add_outgoing_goods()
                break; // Input valid, keluar dari loop
            }
        }
-
+       
+       // Validais date input
        do
        {
            cout << "Masukkan Tanggal (YYYY-MM-DD): ";
@@ -668,63 +670,35 @@ void outgoing_inventory_management::view_outgoing_goods()
 
 void outgoing_inventory_management::find_outgoing_goods()
 {
-   string search_key;
-   char next;
-   do
-   {
-       clearScreen();
-       cout << "Cari berdasarkan:\n1. ID Barang\n2. Tanggal\nPilih opsi: ";
-       cin >> next;
+    string goods_id;
+    char next;
+    do
+    {
+        clearScreen();
+        cout << "Masukkan ID Barang yang dicari: ";
+        cin >> goods_id;
+        cout << endl;
 
-       if (next == '1')
-       {
-           cout << "Masukkan ID Barang yang dicari: ";
-           cin >> search_key;
+        bool found = false;
+        for (const auto &goods : outgoing_goods_list)
+        {
+            if (goods .get_goods_code() == goods_id)
+            {
+                goods .display_goods();
+                found = true;
 
-           bool found = false;
-           for (const auto &goods : outgoing_goods_list)
-           {
-               if (goods.get_goods_code() == search_key)
-               {
-                   goods.display_goods();
-                   found = true;
-               }
-           }
+                break;
+            }
+        }
 
-           if (!found)
-           {
-               cout << "\nBarang tidak ditemukan." << endl;
-           }
-       }
-       else if (next == '2')
-       {
-           cout << "Masukkan Tanggal (YYYY-MM-DD): ";
-           cin >> search_key;
-
-           bool found = false;
-           for (const auto &goods : outgoing_goods_list)
-           {
-               if (goods.get_date() == search_key)
-               {
-                   goods.display_goods();
-                   found = true;
-               }
-           }
-
-           if (!found)
-           {
-               cout << "\nTidak ada barang yang ditemukan pada tanggal tersebut." << endl;
-           }
-       }
-       else
-       {
-           cout << "\nPilihan tidak valid." << endl;
-       }
-
-       cout << "\nTekan 1 untuk mencari barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pengeluaran Barang: ";
-       cin >> next;
-       cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
-   } while (next == '1');
+        if (!found)
+        {
+            cout << "\nBarang tidak ditemukan." << endl;
+        }
+        cout << "\nTekan 1 untuk mencari barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pemasukan Barang: ";
+        cin >> next;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
+    } while (next == '1');
 }
 
 void outgoing_inventory_management::update_outgoing_goods()
