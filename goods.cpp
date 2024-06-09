@@ -325,14 +325,56 @@ void inventory_management::view_incoming_goods()
 
         else
         {
+            // Pilihan sorting
+            clearScreen();
+            int sort_option;
             cout << "=== Daftar Barang Pemasukan ===\n";
+            cout << "Pilih kriteria sorting:\n";
+            cout << "1. Berdasarkan ID Barang\n";
+            cout << "2. Berdasarkan Tanggal\n";
+            cout << "3. Berdasarkan Jumlah Stok\n";
+            cout << "Masukkan pilihan (1-3): ";
+            cin >> sort_option;
+
+            // Sorting berdasarkan pilihan
+            switch (sort_option) 
+            {
+                case 1:
+                    clearScreen();
+                    sort(incoming_goods_list .begin(), incoming_goods_list .end(),
+                        [](const incoming_goods &a, const incoming_goods &b) 
+                        {
+                            return a .get_goods_code() < b .get_goods_code();
+                        });
+                    break;
+                case 2:
+                    clearScreen();
+                    sort(incoming_goods_list .begin(), incoming_goods_list .end(),
+                        [](const incoming_goods &a, const incoming_goods &b) 
+                        {
+                            return a .get_date() < b .get_date();
+                        });
+                    break;
+                case 3:
+                    clearScreen();
+                    sort(incoming_goods_list .begin(), incoming_goods_list .end(),
+                        [](const incoming_goods &a, const incoming_goods &b) 
+                        {
+                            return a .get_current_stock_amount() < b .get_current_stock_amount();
+                        });
+                    break;
+                default:
+                    clearScreen();
+                    cout << "Pilihan tidak valid. Menampilkan tanpa sorting.\n";
+                    break;
+            }
 
             for (const auto &goods : incoming_goods_list) 
             {
                 goods .display_goods();
             }
         }
-        cout << "\nKetik bebas untuk balik ke Menu Manajemen Barang.";
+        cout << "\nKetik 1 untuk sorting lagi, atau klik bebas untuk balik ke Menu Manajemen Barang.";
         cin >> next;
 
         while (getchar() != '\n');
@@ -570,6 +612,69 @@ void inventory_management::manage_incoming_goods()
     while (choices != 6);
 }
 
+/*class outgoing_inventory_management 
+{
+private:
+//    vector <outgoing_goods>outgoing_goods_list;
+
+    outgoing_goods *find_outgoing_goods_list(const string &goods_id) 
+    {
+        for (auto& goods : outgoing_goods_list) 
+        {
+            if (goods .get_goods_code() == goods_id) 
+            {
+                return &goods;
+            }
+        }
+        
+        return nullptr;
+    }
+
+    bool isValidDate(const string &date) 
+    {
+        // Check format YYYY-MM-DD
+        regex datePattern(R"((\d{4})-(\d{2})-(\d{2}))");
+        smatch match;
+    
+        if (!regex_match(date, match, datePattern)) 
+        {
+            return false;
+        }
+
+        int year = stoi(match[1] .str());
+        int month = stoi(match[2] .str());
+        int day = stoi(match[3] .str());
+
+        if (month < 1 || month > 12) 
+        {
+            return false;
+        }
+
+        vector <int>daysInMonth = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+        // Check for leap year
+        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) 
+        {
+            daysInMonth[1] = 29;
+        }
+
+        if (day < 1 || day > daysInMonth[month - 1]) 
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+public:
+    void add_outgoing_goods();
+    void view_outgoing_goods();
+    void find_outgoing_goods();
+    void update_outgoing_goods();
+    void delete_outgoing_goods();
+    void manage_outgoing_goods();
+};*/
+
 void inventory_management::add_outgoing_goods()
 {
    string goods_id, date, destination;
@@ -651,27 +756,69 @@ void inventory_management::add_outgoing_goods()
 
 void inventory_management::view_outgoing_goods()
 {
-   char next;
-   do
-   {
-       if (outgoing_goods_list.empty())
-       {
-           cout << "Tidak ada barang dalam daftar." << endl;
-       }
-       else
-       {
-           cout << "=== Daftar Barang Pengeluaran ===\n";
+    char next;
+    do
+    {
+        if (outgoing_goods_list.empty())
+        {
+            cout << "Tidak ada barang dalam daftar." << endl;
+        }
+        else
+        {
+            // Pilihan sorting
+            clearScreen();
+            int sort_option;
+            cout << "=== Daftar Barang Pengeluaran ===\n";
+            cout << "Pilih kriteria sorting:\n";
+            cout << "1. Berdasarkan ID Barang\n";
+            cout << "2. Berdasarkan Tanggal\n";
+            cout << "3. Berdasarkan Jumlah Stok\n";
+            cout << "Masukkan pilihan (1-3): ";
+            cin >> sort_option;
 
-           for (const auto &goods : outgoing_goods_list)
-           {
-               goods.display_goods();
-           }
-       }
-       cout << "\nKetik bebas untuk balik ke Menu Manajemen Pengeluaran Barang.";
-       cin >> next;
+            // Sorting berdasarkan pilihan
+            switch (sort_option) 
+            {
+                case 1:
+                    clearScreen();
+                    sort(outgoing_goods_list .begin(), outgoing_goods_list .end(),
+                        [](const outgoing_goods &a, const outgoing_goods &b) 
+                        {
+                            return a .get_goods_code() < b .get_goods_code();
+                        });
+                    break;
+                case 2:
+                    clearScreen();
+                    sort(outgoing_goods_list .begin(), outgoing_goods_list .end(),
+                        [](const outgoing_goods &a, const outgoing_goods &b) 
+                        {
+                            return a .get_date() < b .get_date();
+                        });
+                    break;
+                case 3:
+                    clearScreen();
+                    sort(outgoing_goods_list .begin(), outgoing_goods_list .end(),
+                        [](const outgoing_goods &a, const outgoing_goods &b) 
+                        {
+                            return a .get_stock_amount() < b .get_stock_amount();
+                        });
+                    break;
+                default:
+                    clearScreen();
+                    cout << "Pilihan tidak valid. Menampilkan tanpa sorting.\n";
+                    break;
+            }
 
-       while (getchar() != '\n');
-   } while (next == '1');
+            for (const auto &goods : outgoing_goods_list)
+            {
+                goods.display_goods();
+            }
+        }
+        cout << "\nKetik 1 untuk sorting lagi, atau klik bebas untuk balik ke Menu Manajemen Pengeluaran Barang.";
+        cin >> next;
+
+        while (getchar() != '\n');
+    } while (next == '1');
 }
 
 void inventory_management::find_outgoing_goods()
