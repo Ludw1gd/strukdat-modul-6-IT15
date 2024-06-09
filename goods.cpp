@@ -81,12 +81,28 @@ public:
 class incoming_goods : public Goods 
 {
 private:
+    int original_stock_amount;
+    int current_stock_amount;
     string supplier;
 
 public:
     incoming_goods(string goods_id, string goods_name, string goods_category, int stock_amount, string date, string supplier)
-        : Goods(goods_id, goods_name, goods_category, stock_amount, date), supplier(supplier) {}
+        : Goods(goods_id, goods_name, goods_category, stock_amount, date), original_stock_amount(stock_amount), current_stock_amount(stock_amount), supplier(supplier) {}
 
+    int get_original_stock_amount() const 
+    { 
+        return original_stock_amount; 
+    }
+    
+    int get_current_stock_amount() const 
+    { 
+        return current_stock_amount; 
+    }
+    
+    void set_current_stock_amount(int amount) 
+    { 
+        current_stock_amount = amount; 
+    }
     string get_supplier() const 
     { 
         return supplier;
@@ -325,30 +341,62 @@ void inventory_management::view_incoming_goods()
 
 void inventory_management::find_incoming_goods()
 {
-    string goods_id;
+    string search_key;
     char next;
     do
     {
         clearScreen();
-        cout << "Masukkan ID Barang yang dicari: ";
-        cin >> goods_id;
-        cout << endl;
+        cout << "Cari berdasarkan:\n1. ID Barang\n2. Tanggal\nPilih opsi: ";
+        cin >> next;
 
-        bool found = false;
-        for (const auto &goods : incoming_goods_list)
+        if (next == '1')
         {
-            if (goods .get_goods_code() == goods_id)
-            {
-                goods .display_goods();
-                found = true;
+            cout << "Masukkan ID Barang yang dicari: ";
+            cin >> search_key;
+            cout << endl;
 
-                break;
+            bool found = false;
+            for (const auto &goods : incoming_goods_list)
+            {
+                if (goods .get_goods_code() == search_key)
+                {
+                    goods .display_goods();
+                    found = true;
+
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                cout << "\nBarang tidak ditemukan." << endl;
             }
         }
 
-        if (!found)
+        else if (next == '2')
         {
-            cout << "\nBarang tidak ditemukan." << endl;
+            cout << "Masukkan Tanggal (YYYY-MM-DD): ";
+            cin >> search_key;
+
+            bool found = false;
+            for (const auto &goods : incoming_goods_list)
+            {
+                if (goods.get_date() == search_key)
+                {
+                    goods.display_goods();
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                cout << "\nTidak ada barang yang ditemukan pada tanggal tersebut." << endl;
+            }
+        }
+
+        else
+        {
+            cout << "\nPilihan tidak valid." << endl;
         }
         cout << "\nTekan 1 untuk mencari barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pemasukan Barang: ";
         cin >> next;
@@ -522,72 +570,9 @@ void inventory_management::manage_incoming_goods()
     while (choices != 6);
 }
 
-/*class outgoing_inventory_management 
-{
-private:
-//    vector <outgoing_goods>outgoing_goods_list;
-
-    outgoing_goods *find_outgoing_goods_list(const string &goods_id) 
-    {
-        for (auto& goods : outgoing_goods_list) 
-        {
-            if (goods .get_goods_code() == goods_id) 
-            {
-                return &goods;
-            }
-        }
-        
-        return nullptr;
-    }
-
-    bool isValidDate(const string &date) 
-    {
-        // Check format YYYY-MM-DD
-        regex datePattern(R"((\d{4})-(\d{2})-(\d{2}))");
-        smatch match;
-    
-        if (!regex_match(date, match, datePattern)) 
-        {
-            return false;
-        }
-
-        int year = stoi(match[1] .str());
-        int month = stoi(match[2] .str());
-        int day = stoi(match[3] .str());
-
-        if (month < 1 || month > 12) 
-        {
-            return false;
-        }
-
-        vector <int>daysInMonth = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-
-        // Check for leap year
-        if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) 
-        {
-            daysInMonth[1] = 29;
-        }
-
-        if (day < 1 || day > daysInMonth[month - 1]) 
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-public:
-    void add_outgoing_goods();
-    void view_outgoing_goods();
-    void find_outgoing_goods();
-    void update_outgoing_goods();
-    void delete_outgoing_goods();
-    void manage_outgoing_goods();
-};*/
-
 void inventory_management::add_outgoing_goods()
 {
-   string goods_id, goods_name, goods_category, date, destination;
+   string goods_id, date, destination;
    char next;
    int stock_amount;
 
@@ -615,12 +600,15 @@ void inventory_management::add_outgoing_goods()
             }
         } while (!incoming_goods);
 
+        string goods_name = incoming_goods ->get_goods_name();
+        string goods_category = incoming_goods ->get_goods_category();
+
         do
         {
             cout << "Masukkan Jumlah Stok: ";
             cin >> stock_amount;
 
-            if (cin .fail() || stock_amount > incoming_goods ->get_stock_amount() || stock_amount <= 0) 
+            if (cin .fail() || stock_amount > incoming_goods ->get_current_stock_amount() || stock_amount <= 0) 
             {
                 cin .clear();
                 cin .ignore(numeric_limits<streamsize>::max(), '\n');
@@ -645,19 +633,19 @@ void inventory_management::add_outgoing_goods()
         } while (!isValidDate(date));
 
         cout << "Masukkan Tujuan Pengiriman: ";
-        cin.ignore();
+        cin .ignore();
         getline(cin, destination);
 
         outgoing_goods newGoods(goods_id, goods_name, goods_category, stock_amount, date, destination);
         outgoing_goods_list.push_back(newGoods);
 
-        // Update the quantity in incoming goods
-        incoming_goods->set_stock_amount(incoming_goods->get_stock_amount() - stock_amount);
+        // Update jumlah stock
+        incoming_goods->set_current_stock_amount(incoming_goods ->get_current_stock_amount() - stock_amount);
 
-        cout << "\nOutgoing goods added successfully!" << endl;
+        cout << "\nBarang pengeluaran berhasil ditambahkan!" << endl;
         cout << "Tekan 1 untuk menambahkan barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pengeluaran Barang: ";
         cin >> next;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
+        cin .ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
     } while (next == '1');
 }
 
@@ -688,177 +676,198 @@ void inventory_management::view_outgoing_goods()
 
 void inventory_management::find_outgoing_goods()
 {
-   string search_key;
-   char next;
-   do
-   {
-       clearScreen();
-       cout << "Cari berdasarkan:\n1. ID Barang\n2. Tanggal\nPilih opsi: ";
-       cin >> next;
+    string search_key;
+    char next;
+    do
+    {
+        clearScreen();
+        cout << "Cari berdasarkan:\n1. ID Barang\n2. Tanggal\nPilih opsi: ";
+        cin >> next;
 
-       if (next == '1')
-       {
-           cout << "Masukkan ID Barang yang dicari: ";
-           cin >> search_key;
+        if (next == '1')
+        {
+            cout << "Masukkan ID Barang yang dicari: ";
+            cin >> search_key;
 
-           bool found = false;
-           for (const auto &goods : outgoing_goods_list)
-           {
-               if (goods.get_goods_code() == search_key)
-               {
-                   goods.display_goods();
-                   found = true;
-               }
-           }
+            bool found = false;
+            for (const auto &goods : outgoing_goods_list)
+            {
+                if (goods.get_goods_code() == search_key)
+                {
+                    goods.display_goods();
+                    found = true;
+                }
+            }
 
-           if (!found)
-           {
-               cout << "\nBarang tidak ditemukan." << endl;
-           }
-       }
-       else if (next == '2')
-       {
-           cout << "Masukkan Tanggal (YYYY-MM-DD): ";
-           cin >> search_key;
+            if (!found)
+            {
+                cout << "\nBarang tidak ditemukan." << endl;
+            }
+        }
+        else if (next == '2')
+        {
+            cout << "Masukkan Tanggal (YYYY-MM-DD): ";
+            cin >> search_key;
 
-           bool found = false;
-           for (const auto &goods : outgoing_goods_list)
-           {
-               if (goods.get_date() == search_key)
-               {
-                   goods.display_goods();
-                   found = true;
-               }
-           }
+            bool found = false;
+            for (const auto &goods : outgoing_goods_list)
+            {
+                if (goods.get_date() == search_key)
+                {
+                    goods.display_goods();
+                    found = true;
+                }
+            }
 
-           if (!found)
-           {
-               cout << "\nTidak ada barang yang ditemukan pada tanggal tersebut." << endl;
-           }
-       }
-       else
-       {
-           cout << "\nPilihan tidak valid." << endl;
-       }
+            if (!found)
+            {
+                cout << "\nTidak ada barang yang ditemukan pada tanggal tersebut." << endl;
+            }
+        }
+        else
+        {
+            cout << "\nPilihan tidak valid." << endl;
+        }
 
-       cout << "\nTekan 1 untuk mencari barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pengeluaran Barang: ";
-       cin >> next;
-       cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
-   } while (next == '1');
+        cout << "\nTekan 1 untuk mencari barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pengeluaran Barang: ";
+        cin >> next;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
+    } while (next == '1');
 }
 
 void inventory_management::update_outgoing_goods()
 {
-   string goods_id;
-   char next;
-   do
-   {
-       clearScreen();
-       cout << "Masukkan ID Barang yang Akan Diubah: ";
-       cin >> goods_id;
+    string goods_id;
+    char next;
+    do
+    {
+        clearScreen();
+        cout << "Masukkan ID Barang yang Akan Diubah: ";
+        cin >> goods_id;
+        
 
-       bool found = false;
-       for (auto &goods : outgoing_goods_list)
-       {
-           if (goods.get_goods_code() == goods_id)
-           {
-               string goods_name, goods_category, date, destination;
-               int stock_amount;
+        bool found = false;
+        for (auto &goods : outgoing_goods_list)
+        {
+            if (goods.get_goods_code() == goods_id)
+            {
+                // Barang pengeluaran ditemukan, sekarang cari barang pemasukan terkait
+                incoming_goods* incoming_goods = find_incoming_goods_list(goods_id);
+                if (!incoming_goods)
+                {
+                    cout << "Barang dengan ID " << goods_id << " tidak ditemukan di daftar Barang Pemasukan.\n" << endl;
+                    continue;
+                }
+                cout << "Barang ditemukan:\n";
+                incoming_goods ->display_goods();
 
-               cout << "\nMasukkan Nama Barang Baru: ";
-               cin.ignore();
-               getline(cin, goods_name);
-               cout << "Masukkan Kategori Barang Baru: ";
-               cin.ignore();
-               getline(cin, goods_category);
+                string goods_name = incoming_goods ->get_goods_name();
+                string goods_category = incoming_goods ->get_goods_category();
+                string date, destination;
+                int stock_amount;
 
-               while (true)
-               {
-                   cout << "Masukkan Jumlah Stok Baru: ";
-                   cin >> stock_amount;
+                while (true)
+                {
+                    cout << "Masukkan Jumlah Stok Baru: ";
+                    cin >> stock_amount;
+                    
+                    // Hitung stok total yang akan tersedia setelah perubahan
+                    int total_stock = incoming_goods ->get_current_stock_amount() + goods .get_stock_amount();
+                    if (cin .fail() || stock_amount > total_stock || stock_amount <= 0) 
+                    {
+                        cin .clear();
+                        cin .ignore(numeric_limits<streamsize>::max(), '\n');
+                        cout << "Jumlah yang salah. Tolong masukkan jumlah yang benar.\n";
+                    } 
+                    
+                    else 
+                    {
+                        // Perbarui stok barang pemasukan
+                        incoming_goods ->set_current_stock_amount(total_stock - stock_amount);
+                        break;
+                    }
+                }
 
-                   if (cin.fail())
-                   {
-                       cin.clear(); // Menghapus flag kesalahan
-                       cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Mengabaikan input yang salah
-                       cout << "\nInput tidak valid. Silahkan masukkan angka." << endl;
-                   }
-                   else
-                   {
-                       break; // Input valid, keluar dari loop
-                   }
-               }
+                do
+                {
+                    cout << "Masukkan Tanggal Baru (YYYY-MM-DD): ";
+                    cin >> date;
 
-               do
-               {
-                   cout << "Masukkan Tanggal Baru (YYYY-MM-DD): ";
-                   cin >> date;
+                    if (!isValidDate(date))
+                    {
+                        cout << "\nFormat tanggal tidak valid atau hari/bulan yang diinput di luar rentang. Silakan coba lagi." << endl;
+                    }
+                } while (!isValidDate(date));
 
-                   if (!isValidDate(date))
-                   {
-                       cout << "\nFormat tanggal tidak valid atau hari/bulan yang diinput di luar rentang. Silakan coba lagi." << endl;
-                   }
-               } while (!isValidDate(date));
+                cout << "Masukkan Tujuan Pengiriman Baru: ";
+                cin.ignore();
+                getline(cin, destination);
 
-               cout << "Masukkan Tujuan Pengiriman Baru: ";
-               cin.ignore();
-               getline(cin, destination);
+                goods.set_goods_name(goods_name);
+                goods.set_goods_category(goods_category);
+                goods.set_stock_amount(stock_amount);
+                goods.set_data(date);
+                goods.set_destination(destination);
 
-               goods.set_goods_name(goods_name);
-               goods.set_goods_category(goods_category);
-               goods.set_stock_amount(stock_amount);
-               goods.set_data(date);
-               goods.set_destination(destination);
+                cout << "Barang pengeluaran berhasil diperbarui!" << endl;
+                found = true;
+                break;
+            }
+        }
 
-               cout << "Outgoing goods updated successfully!" << endl;
-               found = true;
-               break;
-           }
-       }
+        if (!found)
+        {
+            cout << "Barang pengeluaran dengan ID " << goods_id << " tidak ditemukan." << endl;
+        }
 
-       if (!found)
-       {
-           cout << "Barang tidak ditemukan." << endl;
-       }
-
-       cout << "\nTekan 1 untuk mengubah barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pengeluaran Barang: ";
-       cin >> next;
-       cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
-   } while (next == '1');
+        cout << "\nTekan 1 untuk mengubah barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pengeluaran Barang: ";
+        cin >> next;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
+    } while (next == '1');
 }
 
 void inventory_management::delete_outgoing_goods()
 {
-   string goods_id;
-   char next;
+    string goods_id;
+    char next;
 
-   do
-   {
-       clearScreen();
-       cout << "Masukkan ID Barang yang Akan Dihapus: ";
-       cin >> goods_id;
+    do
+    {
+        clearScreen();
+        cout << "Masukkan ID Barang yang Akan Dihapus: ";
+        cin >> goods_id;
 
-       bool found = false;
-       for (auto it = outgoing_goods_list.begin(); it != outgoing_goods_list.end(); ++it)
-       {
-           if (it->get_goods_code() == goods_id)
-           {
-               outgoing_goods_list.erase(it);
-               cout << "Barang berhasil dihapus!" << endl;
-               found = true;
-               break;
-           }
-       }
+        bool found = false;
+        for (auto it = outgoing_goods_list.begin(); it != outgoing_goods_list.end(); ++it)
+        {
+            if (it->get_goods_code() == goods_id)
+            {
+                incoming_goods *incoming_goods = find_incoming_goods_list(goods_id);
+                
+                if (!incoming_goods)
+                {
+                    cout << "Barang dengan ID " << goods_id << " tidak ditemukan di daftar Barang Pemasukan.\n" << endl;
+                    continue;
+                }
+                // Mengembalikan jumlah stok ke barang pemasukan
+                incoming_goods->set_current_stock_amount(incoming_goods->get_current_stock_amount() + it->get_stock_amount());
+                
+                outgoing_goods_list.erase(it);
+                cout << "Barang berhasil dihapus!" << endl;
+                found = true;
+                break;
+            }
+        }
 
-       if (!found)
-       {
-           cout << "Barang tidak ditemukan." << endl;
-       }
+        if (!found)
+        {
+            cout << "Barang tidak ditemukan." << endl;
+        }
 
-       cout << "\nTekan 1 untuk menghapus barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pengeluaran Barang: ";
-       cin >> next;
-       cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
-   } while (next == '1');
+        cout << "\nTekan 1 untuk menghapus barang lagi, atau tekan karakter lain untuk kembali ke Menu Manajemen Pengeluaran Barang: ";
+        cin >> next;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Membersihkan buffer
+    } while (next == '1');
 }
 
 void inventory_management::manage_outgoing_goods()
@@ -925,21 +934,28 @@ public:
     void report_stock_goods();
 };
 
-void report_management::report_incoming_goods() {
+void report_management::report_incoming_goods() 
+{
     clearScreen();
     cout << "=== Laporan Barang Masuk ===\n";
-    for (const auto &goods : incoming_goods_list) {
+    
+    for (const auto &goods : incoming_goods_list) 
+    {
         goods.display_goods();
+        //cout << "Jumlah: " << goods .get_original_stock_amount() << endl; // Original stock amount
     }
     cout << "\nTekan enter untuk kembali ke Menu Laporan.";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     cin.get();
 }
 
-void report_management::report_outgoing_goods() {
+void report_management::report_outgoing_goods() 
+{
     clearScreen();
     cout << "=== Laporan Barang Keluar ===\n";
-    for (const auto &goods : outgoing_goods_list) {
+    
+    for (const auto &goods : outgoing_goods_list) 
+    {
         goods.display_goods();
     }
     cout << "\nTekan enter untuk kembali ke Menu Laporan.";
@@ -947,23 +963,33 @@ void report_management::report_outgoing_goods() {
     cin.get();
 }
 
-void report_management::report_stock_goods() {
+void report_management::report_stock_goods() 
+{
     clearScreen();
     cout << "=== Laporan Stok Barang ===\n";
     cout << "Barang Masuk:\n";
-    for (const auto &goods : incoming_goods_list) {
-        goods.display_goods();
+    
+    for (const auto &goods : incoming_goods_list) 
+    {
+        cout << "ID: " << goods. get_goods_code() << endl;
+        cout << "Nama: " << goods. get_goods_name() << endl;
+        cout << "Jumlah: " << goods. get_current_stock_amount() << endl << endl; // Current stock amount
     }
     cout << "\nBarang Keluar:\n";
-    for (const auto &goods : outgoing_goods_list) {
-        goods.display_goods();
+    
+    for (const auto &goods : outgoing_goods_list) 
+    {
+        cout << "ID: " << goods. get_goods_code() << endl;
+        cout << "Nama: " << goods. get_goods_name() << endl;
+        cout << "Jumlah: " << goods. get_stock_amount() << endl << endl;
     }
     cout << "\nTekan enter untuk kembali ke Menu Laporan.";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     cin.get();
 }
 
-void report_management::report() {
+void report_management::report() 
+{
     char next;
     do {
         clearScreen();
@@ -1001,6 +1027,7 @@ void main_menu() {
 
     int choices;
     do {
+        clearScreen();
         cout << "\n===============================================" << endl;
         cout << "                  MENU UTAMA" << endl;
         cout << "===============================================" << endl;
